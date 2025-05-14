@@ -28,6 +28,7 @@ export default {
                 'lkt-loader',
                 'lkt-field',
                 'lkt-http-client',
+                'lkt-date-tools',
                 'lkt-i18n',
                 'lkt-tooltip',
                 'lkt-modal',
