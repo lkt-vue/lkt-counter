@@ -1,15 +1,40 @@
 <script setup lang="ts">
 
 import {Counter, CounterConfig, CounterType, getDefaultValues} from "lkt-vue-kernel";
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
+import {secondsToTimeString} from 'lkt-date-tools';
 
 const props = withDefaults(defineProps<CounterConfig>(), getDefaultValues(Counter));
 
-const displayValue = ref(props.type === CounterType.Number ? parseFloat(props.from) : props.from);
+const displayValue = ref(<string|number|Date>(props.type === CounterType.Number ? parseFloat(props.from) : props.from));
 const refreshInterval = ref(undefined);
 const stepValue = ref(typeof props.step === 'undefined' ? 1 : parseFloat(props.step));
 const stepDuration = ref(typeof props.timeout === 'undefined' ? 1000 : parseFloat(props.timeout));
 const limit = ref(props.type === CounterType.Number ? parseFloat(props.to) : props.to);
+
+const timer = ref(props.seconds);
+
+const updateTimer = () => {
+    // //@ts-ignore
+    // let minutes = parseInt(timer.value / 60, 10)
+    // //@ts-ignore
+    // let seconds = parseInt(timer.value % 60, 10);
+    //
+    // minutes = minutes < 10 ? `0${minutes}` : minutes;
+    // seconds = seconds < 10 ? `0${seconds}` : seconds;
+
+    displayValue.value = secondsToTimeString(timer.value);
+}
+
+function startTimer() {
+    setInterval(function () {
+        updateTimer();
+        if (--timer.value < 0) {
+            timer.value = 0;
+            // timer = duration; // uncomment this line to reset timer automatically after reaching 0
+        }
+    }, 1000);
+}
 
 if (props.type === CounterType.Number) {
     refreshInterval.value = setInterval(() => {
@@ -55,7 +80,16 @@ if (props.type === CounterType.Number) {
             clearInterval(refreshInterval.value);
         }
     }, stepDuration.value);
+
+} else if (props.type === CounterType.Timer) {
+    updateTimer();
 }
+
+onMounted(() => {
+    if (props.type === CounterType.Timer) {
+        startTimer();
+    }
+})
 
 </script>
 
