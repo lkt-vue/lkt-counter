@@ -1,7 +1,15 @@
 <script setup lang="ts">
 
-import {Counter, CounterConfig, CounterType, getDefaultValues} from "lkt-vue-kernel";
-import {onMounted, ref} from "vue";
+import {
+    Counter,
+    CounterConfig,
+    CounterType,
+    CounterView,
+    getDefaultValues,
+    ProgressAnimation,
+    ProgressConfig
+} from "lkt-vue-kernel";
+import {computed, onMounted, ref} from "vue";
 import {secondsToTimeString} from 'lkt-date-tools';
 
 const props = withDefaults(defineProps<CounterConfig>(), getDefaultValues(Counter));
@@ -26,13 +34,19 @@ const updateTimer = () => {
     displayValue.value = secondsToTimeString(timer.value);
 }
 
+let timerInterval: number = null;
+
 function startTimer() {
-    setInterval(function () {
-        updateTimer();
+    updateTimer();
+    timerInterval = setInterval(() => {
         if (--timer.value < 0) {
             timer.value = 0;
             // timer = duration; // uncomment this line to reset timer automatically after reaching 0
+            clearInterval(timerInterval);
+
+            if (typeof props.events.onEnd === 'function') props.events.onEnd();
         }
+        updateTimer();
     }, 1000);
 }
 
@@ -91,8 +105,42 @@ onMounted(() => {
     }
 })
 
+const computedProgressConfig = computed(() => {
+
+    let modelValue = 0, steps = undefined;
+
+    switch (props.type) {
+        case CounterType.Timer:
+            modelValue = (timer.value * 100) / props.seconds;
+            steps = 100 / props.seconds;
+            break;
+
+    }
+
+    // console.log('steps: ', steps, props.seconds);
+
+
+    return <ProgressConfig>{
+        ...props.progress,
+        animation: {
+            ...typeof props.progress.animation === 'object' ? props.progress.animation : {},
+            externalControl: true,
+        },
+        duration: 1000,
+        text: displayValue.value,
+        modelValue,
+    }
+})
+
 </script>
 
 <template>
-<div class="lkt-counter">{{displayValue}}</div>
+    <div class="lkt-counter">
+        <template v-if="view === CounterView.Progress">
+            <lkt-progress v-bind="computedProgressConfig"/>
+        </template>
+        <template v-else>
+            {{displayValue}}
+        </template>
+    </div>
 </template>
