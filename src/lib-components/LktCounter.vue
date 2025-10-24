@@ -9,7 +9,7 @@ import {
     ProgressAnimation,
     ProgressConfig
 } from "lkt-vue-kernel";
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import {secondsToTimeString} from 'lkt-date-tools';
 
 const props = withDefaults(defineProps<CounterConfig>(), getDefaultValues(Counter));
@@ -21,6 +21,8 @@ const stepDuration = ref(typeof props.timeout === 'undefined' ? 1000 : parseFloa
 const limit = ref(props.type === CounterType.Number ? parseFloat(props.to) : props.to);
 
 const timer = ref(props.seconds);
+const paused = ref(false);
+const progressValue = ref(0);
 
 const updateTimer = () => {
     // //@ts-ignore
@@ -32,13 +34,37 @@ const updateTimer = () => {
     // seconds = seconds < 10 ? `0${seconds}` : seconds;
 
     displayValue.value = secondsToTimeString(timer.value);
+    updateProgressValue();
+}
+
+const updateProgressValue = () => {
+    let modelValue = 100;
+
+    switch (props.type) {
+        case CounterType.Timer:
+            if (timer.value === 1) modelValue = 0;
+            else modelValue = ((timer.value - 1) * 100) / props.seconds;
+            break;
+
+    }
+
+    progressValue.value = modelValue;
 }
 
 let timerInterval: number = null;
 
 function startTimer() {
-    updateTimer();
+    if (paused.value) return;
+    // updateTimer();
     timerInterval = setInterval(() => {
+        if (paused.value) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                paused.value = true;
+            }
+            return;
+        }
         if (--timer.value < 0) {
             timer.value = 0;
             // timer = duration; // uncomment this line to reset timer automatically after reaching 0
@@ -46,8 +72,16 @@ function startTimer() {
 
             if (typeof props.events.onEnd === 'function') props.events.onEnd();
         }
-        updateTimer();
+        // updateTimer();
     }, 1000);
+}
+
+function pauseTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        paused.value = true;
+    }
 }
 
 if (props.type === CounterType.Number) {
@@ -105,31 +139,22 @@ onMounted(() => {
     }
 })
 
-const computedProgressConfig = computed(() => {
+defineExpose({
+    pause: () => {
+        if (!paused.value) {
+            pauseTimer();
+        }
+    },
+    start: () => {
+        if (paused.value) {
+            paused.value = false;
+            startTimer();
+        }
+    },
+})
 
-    let modelValue = 0, steps = undefined;
-
-    switch (props.type) {
-        case CounterType.Timer:
-            modelValue = (timer.value * 100) / props.seconds;
-            steps = 100 / props.seconds;
-            break;
-
-    }
-
-    // console.log('steps: ', steps, props.seconds);
-
-
-    return <ProgressConfig>{
-        ...props.progress,
-        animation: {
-            ...typeof props.progress.animation === 'object' ? props.progress.animation : {},
-            externalControl: true,
-        },
-        duration: 1000,
-        text: displayValue.value,
-        modelValue,
-    }
+watch(timer, (v) => {
+    updateTimer();
 })
 
 </script>
@@ -137,7 +162,18 @@ const computedProgressConfig = computed(() => {
 <template>
     <div class="lkt-counter">
         <template v-if="view === CounterView.Progress">
-            <lkt-progress v-bind="computedProgressConfig"/>
+            <lkt-progress
+                v-bind="<ProgressConfig>{
+                    ...progress,
+                    animation: {
+                        ...typeof progress.animation === 'object' ? progress.animation : {},
+                        externalControl: true,
+                    },
+                    duration: 1000,
+                    text: displayValue,
+                }"
+                :model-value="progressValue"
+            />
         </template>
         <template v-else>
             {{displayValue}}

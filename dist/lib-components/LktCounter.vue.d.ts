@@ -1,5 +1,8 @@
 import { CounterConfig, CounterType, CounterView, ProgressConfig } from "lkt-vue-kernel";
-declare const _default: import("vue").DefineComponent<CounterConfig, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<CounterConfig> & Readonly<{}>, {
+declare const _default: import("vue").DefineComponent<CounterConfig, {
+    pause: () => void;
+    start: () => void;
+}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<CounterConfig> & Readonly<{}>, {
     type: CounterType;
     progress: ProgressConfig;
     view: CounterView;

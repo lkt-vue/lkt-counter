@@ -1,4 +1,4 @@
-export { K as default };
-declare namespace K {
-    function install(l: any): void;
+export { R as default };
+declare namespace R {
+    function install(o: any): void;
 }
