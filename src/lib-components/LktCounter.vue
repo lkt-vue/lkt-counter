@@ -42,7 +42,8 @@ const updateProgressValue = () => {
 
     switch (props.type) {
         case CounterType.Timer:
-            if (timer.value === 1) modelValue = 0;
+            if (timer.value <= 1) modelValue = 0;
+            // else if (paused.value) modelValue = (timer.value * 100) / props.seconds;
             else modelValue = ((timer.value - 1) * 100) / props.seconds;
             break;
 
@@ -81,6 +82,7 @@ function pauseTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
         paused.value = true;
+        updateTimer();
     }
 }
 
@@ -169,7 +171,7 @@ watch(timer, (v) => {
                         ...typeof progress.animation === 'object' ? progress.animation : {},
                         externalControl: true,
                     },
-                    duration: 1000,
+                    duration: paused ? 0 : 1000,
                     text: displayValue,
                 }"
                 :model-value="progressValue"
