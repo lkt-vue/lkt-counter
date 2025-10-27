@@ -34,6 +34,7 @@ const updateTimer = () => {
     // seconds = seconds < 10 ? `0${seconds}` : seconds;
 
     displayValue.value = secondsToTimeString(timer.value);
+    if (typeof props.events.onChange === 'function') props.events.onChange(timer.value);
     updateProgressValue();
 }
 
